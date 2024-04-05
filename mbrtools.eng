@@ -1,0 +1,19 @@
+               MBR Tools Version 1
+(c) Artyomov Alexander.    aralni[no spam]mail.ru
+
+This kit is intended for working with boot
+sector ("Master Boot Record", MBR) of HDD.
+
+Kit contain:
+
+MBR Read		- for save MBR to file.
+
+MBR Write		- for restore (rewrite) MBR from file.
+
+MBR Macro		- for manipulation of MBR saved in file.
+
+Easy Boot Manager	- boot code for MBR with extended functions
+			(selecting OS by keyboard and timer,
+			as well as password protection).
+
+All programs spread with GNU license. Sources attached.

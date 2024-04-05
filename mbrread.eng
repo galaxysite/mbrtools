@@ -1,0 +1,26 @@
+MBR Read Version 1
+(c) Artyomov Alexander, 2004 year.
+
+Program is intended for save Master Boot Record (MBR) of HDD to file.
+
+Working with DOS or Windows 98 only.
+
+Distribute with GNU license. Sources attached.
+
+THE AUTHOR DOES NOT CARRY NO RESPONSIBILITY FOR ABSOLUTELY ANY CONSEQUENCES
+OF USE OR NOT USE OF PROGRAM. YOU USE IT ON ITS AWE AND RISK.
+
+Compiled by using NASM.
+
+Command line syntax:
+
+mbrread.com space number of disk space filename
+
+Nuber of disk can be from 0 to 9 for HDD and A, B for FDD.
+Current (boot) drive is 0.
+
+Return value of ERRORLEVEL variable:
+0 - all ok.
+1 - bad command line.
+2 - error of read MBR from HDD.
+3 - error of saving file.

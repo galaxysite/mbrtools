@@ -1,0 +1,298 @@
+; Easy Boot Manager
+; Version 1.1
+; GNU AGPL v3 or (at your option) any later version.
+;
+; This Program is Code for Master Boot Record of HDD.
+; For compiling use NASM assembler.
+;
+; It can: Load OS from any partition (0..3) by user select (F1..F4 key),
+; Autoload OS by Timer. User can change default OS and timer duration
+; (Ctrl+F1..F4 for OS and 0..9 for timer (0-timer off, 1..9 seconds) ).
+; Also can support Password (fixed length 8 chars) for access to computer.
+;
+;
+; (cl) 2004-2007  Artyomov Alexander
+;                                       aralni[no spam]mail.ru
+;
+
+now_offset	equ	6000h
+std_offset	equ	7C00h
+; save_drive	equ	80h	; 0=FLOPPY 80h=BOOT HDD
+
+[ORG now_offset]
+		xor ax, ax	; 
+		mov ss, ax	; set stack seg to 0000h
+		mov sp, std_offset	; set stack pointer to 7c00h
+		sti		; enable int
+
+		mov di, now_offset
+		mov si, sp
+		mov es, ax
+		mov ds, ax
+
+;          Logic:    (ES:DI) > (DS:SI)
+;                    if DF = 0
+;                        SI > SI + 2
+;                        DI > DI + 2
+;                    else
+;                        SI > SI - 2
+;                        DI > DI - 2
+
+		cld		; move in the forward direction
+		mov cx, 100h	; move 256 words (512 bytes)
+		repnz		; move MBR from 07C0:0000
+		movsw		; to 0600:0000
+		jmp 0:start	; jmp to NEW LOCATION
+
+start:
+		mov [save_BIOS_drive], dl			; save drive number what BIOS passed in DL
+
+		call cls
+		
+		mov ax, 1300h	; STRING ON SCREEN, SUB SERVICE
+		mov dx, 0B0Eh	; TOP, LEFT
+		mov bx, 8Fh	; PAGE (0-current), ATTR
+		mov BP, string_hint
+		mov CX, 50	; COUNT OF SYMBOLS
+		int 10h
+
+;----------------------
+
+		mov bl, [pwd_on_timer]
+		and bl, 00001111b
+		test bl, bl
+		jz cycle_loop
+		inc bl
+
+cycle_wait:
+		dec bl
+		test bl, bl
+		jnz cycle_jump
+		mov byte ah, [part_boot] ; in AH number of PART
+		jmp exit_and_run
+		cycle_jump:
+		mov ah, 86H     ; BIOS 'wait'
+		mov cx, 0Fh	; 
+		mov dx, 4240h   ; 1000000 in cx+dx
+		int 15h		; run service
+		push bx
+		call get_key
+		pop bx
+		jmp cycle_wait
+
+cycle_loop:	call get_key
+		jmp cycle_loop
+
+;-----------------------------------------------------------------
+
+get_key:	mov ah, 1	; BIOS 'read symbol from keyboard'
+		int 16h		; run service
+		jz  return_get_key	; check for new input
+		xor ah, ah	; eject symbol
+		int 16h		; run service
+
+case_key:       test al, al       ; if al = 0 then this is functional key
+		jz  func_key	; If fn pressed, select PART and exit cycle
+		cmp al, '0'
+		jb  get_key	; if < '0'
+		cmp al, '9'
+		ja  get_key	; if > '9'
+		sub al, '0'	; StrToInt
+		and byte [pwd_on_timer], 11110000b ; clear timer counter
+		or byte  [pwd_on_timer], al        ; set new value for timer
+		jmp cycle_loop	; ok, get next command in cycle
+		
+func_key:	cmp ah, 59	; F1
+		jb  get_key	; IF < F1
+		cmp ah, 62	; F4
+		ja  ctrl_and_f	; IF > F4
+				; run here only if F1..F4 pressed
+		sub ah, 59	; 0..3 part
+		jmp exit_and_run     ; AH = PART NUMBER
+
+		ctrl_and_f:
+
+                cmp ah, 94	; F1
+                jb  get_key	; IF < F1
+                cmp ah, 97	; F4
+                ja  get_key	; IF > F4
+
+		sub ah, 94	; 0..3 part
+
+		mov [part_boot], ah  ; If CTRL then Save PART for BOOT
+
+                jmp exit_and_run     ; AH = PART NUMBER
+
+
+return_get_key:
+ret				; end get_key
+
+; -----------------------------------------------------------------------------
+
+hang:		jmp hang
+
+;------------------------------------------------------------------------------
+exit_and_run:   
+		mov byte [bBootFlag_1], 0h ; clear partition bootable byte
+		mov byte [bBootFlag_2], 0h ; -||-
+		mov byte [bBootFlag_3], 0h ; -||-
+		mov byte [bBootFlag_4], 0h ; -||-
+
+		test ah, ah ; PART 0
+		jne part_1
+		mov edx, [lBeginAbsSec_1]
+		mov byte [bBootFlag_1], 80h
+		jmp end_select
+		part_1:
+		cmp ah, 1 ; PART 1
+		jne part_2
+		mov edx, [lBeginAbsSec_2]
+		mov byte [bBootFlag_2], 80h
+		jmp end_select
+		part_2:
+		cmp ah, 2 ; PART 2
+		jne part_3
+		mov edx, [lBeginAbsSec_3]
+		mov byte [bBootFlag_3], 80h
+		jmp end_select
+		part_3:
+		mov edx, [lBeginAbsSec_4]
+		mov byte [bBootFlag_4], 80h
+end_select:
+                mov [disk_adr_pkt_lba], edx
+extended_read:
+		mov ah, 42h		; BIOS extended read
+;		mov dl, 80h		; current drive
+		mov dl, [save_BIOS_drive]	; restore BIOS drive
+		mov si, disk_adr_pkt	; DS:SI
+		int 13h
+
+		mov ax, [std_offset + 510]
+		cmp ax, 0AA55h
+		jne cycle_loop
+
+goto_boot:
+		call self_save		;
+		call cls		;
+
+		mov si, bBootFlag_1	; start of part table
+
+		jmp 0:std_offset	; Goto boot sector !
+
+; -----------------------------------------------------------------------------
+self_save:
+		mov ax, 0301h		; BIOS service 'write sector(s)' ; count of sectors for write
+		mov dl, [save_BIOS_drive]	; restore BIOS drive
+		mov cx, 0001h ; cyl ; sector
+		mov bx, now_offset  ; segment - current, offset 
+		int 13h       ; run service
+ret
+; -----------------------------------------------------------------------------
+cls:
+		mov ah, 0Fh	; BIOS 'get video mode'
+		int 10h		; run service VM in AL
+		xor ah, ah	; BIOS 'set video mode'
+		int 10h		; CLS
+ret
+; -----------------------------------------------------------------------------
+
+pwd:
+		xor bp, bp	; mov bp, 0 (maximum of password length 8)
+get_pwdkey:	
+		xor ah, ah	; BIOS 'Read Key' (wait)
+		int 16h		; run service
+		test al, al	; if Fn keys
+		jz  get_pwdkey	;
+		mov ah, [password + bp]
+		cmp ah, al	; input ? pwd (= <>)
+		jne hang	; bad password
+
+		inc bp
+		cmp bp, 8
+		jnz get_pwdkey
+ 
+ret		; get_pwdkey
+
+;------------------------------------------------------------------------------
+
+disk_adr_pkt:
+	db disk_adr_pkt_len	; packet size (16 bytes)
+	db 0			; reserved
+
+	;dw 1
+	db 1			; number of sectors to transfer
+	db 0			; reserved
+
+; Note: if far address of sector buffer = FFFF:FFFF, the 64-bit
+; linear address of the sector buffer is stored at offset 10h
+; instead (disk_adr_pkt_len must be set to 18h)
+
+disk_adr_pkt_off:
+	dw std_offset		; far address of sector buffer (offset)
+disk_adr_pkt_seg:
+	dw 0			; far address of sector buffer (segment)
+disk_adr_pkt_lba:
+	dd 0, 0			; 64-bit starting sector number
+disk_adr_pkt_len equ $ - disk_adr_pkt
+
+;------------------------------------------------------------------------------
+;message		db	'A='
+;vah		db	'0'
+;		db	' T='
+;vpt		db	'0'
+;		db	' B='
+;vpb		db	'0'
+
+;------------------------------------------------------------------------------
+
+save_BIOS_drive	db	0
+
+;------------------------------------------------------------------------------
+
+times 380-($-$$) db 0 ; MY RECORDS
+pwd_on_timer	db	0 ; 1bit pwd on(1), 3bit-not used, 4bit-timer(0-disable)
+password	db	'12345678'
+string_hint	db	'F1-12345678, F2-12345678, F3-12345678, F4-12345678'
+part_boot	db	0       ; part for boot
+		; STANDARD RECORDS BELOW ; times 440-($-$$) db 0
+unused		db	0	; ???? (FUCK YOU, M$ !)
+Volume_ID	dd	'FUCK'	; unique id of hdd
+who_wrote	db	0	; who wrote Volume_ID ???? (FUCK YOU, M$ !)
+		; PARTITION 1	; times 446-($-$$) db 0
+bBootFlag_1	db	0	; 0=not active, 80H = active (boot this partition)
+bBeginHead_1	db	0	; partition begins at this head...
+rBeginSecCyl_1	dw	0	; ...and this sector and cylinder (see below)
+bFileSysCode_1	db	0	; file system type
+bEndHead_1	db	0	; partition ends at this head...
+bEndSecCyl_1	dw	0	; ...and this sector and cylinder (see below)
+lBeginAbsSec_1	dd	0	; partition begins at this absolute sector #
+lTotalSects_1	dd	0	; total sectors in this partition
+		; PARTITION 2
+bBootFlag_2	db	0	; 0=not active, 80H = active (boot this partition)
+bBeginHead_2	db	0	; partition begins at this head...
+rBeginSecCyl_2	dw	0	; ...and this sector and cylinder (see below)
+bFileSysCode_2	db	0	; file system type
+bEndHead_2	db	0	; partition ends at this head...
+bEndSecCyl_2	dw	0	; ...and this sector and cylinder (see below)
+lBeginAbsSec_2	dd	0	; partition begins at this absolute sector #
+lTotalSects_2	dd	0	; total sectors in this partition
+		; PARTITION 3
+bBootFlag_3	db	0	; 0=not active, 80H = active (boot this partition)
+bBeginHead_3	db	0	; partition begins at this head...
+rBeginSecCyl_3	dw	0	; ...and this sector and cylinder (see below)
+bFileSysCode_3	db	0	; file system type
+bEndHead_3	db	0	; partition ends at this head...
+bEndSecCyl_3	dw	0	; ...and this sector and cylinder (see below)
+lBeginAbsSec_3	dd	0	; partition begins at this absolute sector #
+lTotalSects_3	dd	0	; total sectors in this partition
+		; PARTITION 4
+bBootFlag_4	db	0	; 0=not active, 80H = active (boot this partition)
+bBeginHead_4	db	0	; partition begins at this head...
+rBeginSecCyl_4	dw	0	; ...and this sector and cylinder (see below)
+bFileSysCode_4	db	0	; file system type
+bEndHead_4	db	0	; partition ends at this head...
+bEndSecCyl_4	dw	0	; ...and this sector and cylinder (see below)
+lBeginAbsSec_4	dd	0	; partition begins at this absolute sector #
+lTotalSects_4	dd	0	; total sectors in this partition
+		; BOOT INDICATOR
+dw 0AA55h

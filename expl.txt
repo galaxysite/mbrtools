@@ -1,0 +1,13 @@
+rem< ÍÀ ÄÈÑÊÅ ÑÎÕÐÀÍ¨Í ÔÀÉË file.mbr ÑÎÄÅÐÆÀÙÈÉ ÌÁÐ ÇÀÃÐÓÇÈÌ ÅÃÎ Â ÏÀÌßÒÜ
+rem< (Â ÄÎÑÅ ÍÀÏÐÈÌÅÐ ÄËß ÑÎÕÐÀÍÅÍÈß ÌÁÐ ÌÎÆÍÎ ÈÑÏÎËÜÇÎÂÀÒÜ: MBRREAD.COM 0 file.mbr)
+
+load<file.mbr
+
+rem< ÒÅÏÅÐÜ ÂÎÇÜÌ¨Ì ÊÎÄ ÈÇ ÔÀÉËÀ eboot
+
+getcode<eboot
+
+rem< ÑÎÕÐÀÍÈÌ ÃÎÒÎÂÛÉ ÌÁÐ Â ÔÀÉËÅ result.mbr  ÏÐÎÄÓÊÒ ÃÎÒÎÂ ÄËß ÇÀÏÈÑÈ Â ÌÁÐ ÂÈÍ×ÅÑÒÅÐÀ
+rem< (ÍÀÏÐÈÌÅÐ Â ÄÎÑÅ Ñ ÏÎÌÎÙÜÞ: MBRWRITE.COM 0 result.mbr)
+
+saveproduct<result.mbr

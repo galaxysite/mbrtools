@@ -1,0 +1,13 @@
+rem< НА ДИСКЕ СОХРАНЁН ФАЙЛ file.mbr СОДЕРЖАЩИЙ МБР ЗАГРУЗИМ ЕГО В ПАМЯТЬ
+rem< (В ДОСЕ НАПРИМЕР ДЛЯ СОХРАНЕНИЯ МБР МОЖНО ИСПОЛЬЗОВАТЬ: MBRREAD.COM 0 file.mbr)
+
+load<file.mbr
+
+rem< ТЕПЕРЬ ВОЗЬМЁМ КОД ИЗ ФАЙЛА eboot
+
+getcode<eboot
+
+rem< СОХРАНИМ ГОТОВЫЙ МБР В ФАЙЛЕ result.mbr  ПРОДУКТ ГОТОВ ДЛЯ ЗАПИСИ В МБР ВИНЧЕСТЕРА
+rem< (НАПРИМЕР В ДОСЕ С ПОМОЩЬЮ: MBRWRITE.COM 0 result.mbr)
+
+saveproduct<result.mbr

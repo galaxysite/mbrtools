@@ -1,0 +1,28 @@
+Easy Boot Manager Version 1
+(c) Artyomov Alexander, 2004 year.
+
+Program is boot code for Master Boot Record (MBR) of HDD.
+Its allow select partition (OS) for booting, by using keyboard
+buttons or timer. Also can set password on boot process.
+
+Distribute with GNU license. Sources attached.
+
+THE AUTHOR DOES NOT CARRY NO RESPONSIBILITY FOR ABSOLUTELY ANY CONSEQUENCES
+OF USE OR NOT USE OF PROGRAM. YOU USE IT ON ITS AWE AND RISK.
+
+Compiled by using NASM.
+
+Tuning by using MBR Macro, that include in MBR Tools.
+Write on HDD by using MBR Write, that include in MBR Tools or analogue.
+
+Using:
+
+When boot, pressing F1 - F4 buttons (before timer expire),
+allow select OS, from needed partition (1 - 4). If herewith holding Ctrl
+then it select be remembered.
+
+Pressing buttons 0-9 allow set timer interval in seconds. If 0 selected
+then timer be disabled and need selecting manually.
+
+If password protection active then when booting need input password.
+After this boot process continued normally.

@@ -1,0 +1,161 @@
+MBR Macro Version 1.1
+(á) Artyomov Alexander, 2004 year. aralni[no spam]mail.ru
+
+This program is intended for manipulation of Master Boot
+Record (MBR) of HDD, beforehand saved in file.
+
+Program contain command interpreter, commands his can type manually or
+redirect from file by using DOS. Every command placed on one string and
+contain name of command and parametrs (quantity 0..3) they dividing by
+using left corner arrow "<". Case of commands don't care.
+
+Distribute with GNU license. Sources attached.
+
+THE AUTHOR DOES NOT CARRY NO RESPONSIBILITY FOR ABSOLUTELY ANY CONSEQUENCES
+OF USE OR NOT USE OF PROGRAM. YOU USE IT ON ITS AWE AND RISK.
+
+Compiled by using Free Pascal 1.0.10. Compressed by using UPX 1.20w.
+
+List of Commands:
+
+EXIT		- Exit of program. No parametrs.
+
+REM		- Ignore string (comment). 
+		Chars after left corner arrow be ignored.
+
+WRITE		- Write the string on screen. 
+		Chars after left corner arrow be displayed.
+
+RESET		- Reset MBR. All fill zero and place to end 55AAh.
+		No parametrs.
+
+INFO		- Display info of MBR. No parametrs.
+
+DUMP		- Display dump of MBR. No parametrs.
+
+SAVEPRODUCT	- Save result of work with MBR to file.
+		Parametrs:
+		1. Filename.
+
+GETALLPARTS	- Load partition table from file.
+		Parametrs:
+		1. Filename.
+
+GETPART		- Load selected partition from file in
+		selected partition of MBR.
+		Parametrs:
+		1. Filename, whence load.
+		2. Number of partition of MBR (0..3).
+		3. Number of partition in file (0..3).
+
+GETPARTSTD	- Load selected partition from file in selected
+		partition of MBR (standard (old) fields only).
+		Parametrs:
+		1. Filename, whence load.
+		2. Number of partition of MBR (0..3).
+		3. Number of partition in file (0..3).
+
+GETPARTLBA	- Load selected partition from file in
+		selected partition of MBR (LBA fields only).
+		Parametrs:
+		1. Filename, whence load.
+		2. Number of partition of MBR (0..3).
+		3. Number of partition in file (0..3).
+
+GETID		- Load "Volume ID" from file.
+		Parametrs:
+		1. Filename, whence load.
+
+GETCODE		- Load boot code from file.
+		Parametrs:
+		1. Filename, whence load.
+
+GETPARTTYP	- Load type (file system) selected partition from file.
+		Parametrs:
+		1. Filename, whence load.
+		2. Number of partition of MBR (0..3).
+		3. Number of partition in file (0..3).
+
+SETPARTBEGINLENLBA - Set begin - length of partition in LBA.
+		Parametrs:
+		1. Number of partition (0..3).
+		2. Begin of partition.
+		3. Length of partition.
+
+SETPARTTYP	- Set type (file system) of partition.
+		Parametrs:
+		1. Number of partition (0..3).
+		2. Type of partition.
+
+SETPARTACTIVE	- Set partition bootable status.
+		Parametrs:
+		1. Number of partition (0..3).
+		2. Bootable. 0 - no, 1 - yes.
+
+SWAPPARTS	- Swap partitions.
+		Parametrs:
+		1. First partition (0..3).
+		2. Second partition (0..3).
+
+SETID		- Set "Volume ID" (idea Microsoft).
+		Parametrs:
+		1. unused (byte).
+		2. Volume ID (dword).
+		2. who wrote (byte). "Who wrote Volume ID".
+
+SETPARTBEGINCHS - Set begin of partition in CHS. (Format of data same as
+		in functions Int 13).
+		Parametrs:
+		1. Number of partition (0..3).
+		2. Begin head of partition (byte).
+		3. Begin sector and cylinder of partition (word).
+
+SETPARTENDCHS	- Set end of partition in CHS. (Format of data same as
+		in functions Int 13).
+		Parametrs:
+		1. Number of partition (0..3).
+		2. End head of partition (byte).
+		3. End sector and cylinder of partition (word).
+
+RESETPARTCHS	- Fill zero CHS of partition.
+		Parametrs:
+		1. Number of partition (0..3).
+
+CHSTOLBA	- Recalculate CHS to LBA in partition.
+		Parametrs:
+		1. Number of partition (0..3).
+
+EXPORT		- Export MBR to text format.
+		Parametrs:
+		1. Text file name.
+
+Next commands is intended ONLY for using with EBoot Manager,
+that include in MBR Tools.
+
+GETMYREC	- Load my fields (timer, default system,
+		names of systems, password) from file.
+		Parametrs:
+		1. Filename, whence load.
+
+SETMYOSNAMES	- Set system names string. Length of string need be from
+		1 to 50 chars.
+		Parametrs:
+		1. String.
+
+SETMYBOOTPART	- Set default system.
+		Parametrs:
+		1. Number of partition (0..3).
+
+SETMYTIMER	- Set timer interval (seconds).
+		Parametrs:
+		1. Interval 1..9, 0-off.
+
+SETMYPASSWORDSTRING - Set password string. Length of string need be 8 chars.
+		Parametrs:
+		1. Password.
+
+SETMYPASSWORDSTATUS - Enable / disable password.
+		Parametrs:
+		1. 1 - password on, 0 - off.
+
+MYINFO		- Display info about my fields. No parametrs.
